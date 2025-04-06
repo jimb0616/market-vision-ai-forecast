@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,13 +9,13 @@ import {
   Settings, LineChart, Activity, PieChart, TrendingUp, TrendingDown,
   DollarSign, BarChart, ChevronRight
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import StockChart from "@/components/StockChart";
 import StockPredictionCard from "@/components/StockPredictionCard";
 import MarketSentimentHeatmap from "@/components/MarketSentimentHeatmap";
 import { popularStocks, generateChartData, marketSentiment } from "@/lib/mockData";
 
 const Dashboard = () => {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [chartData, setChartData] = useState({});
   const [selectedStock, setSelectedStock] = useState(popularStocks[0]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -172,16 +171,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <button
-              className="text-gray-400 hover:text-white transition-colors"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            >
-              {theme === 'dark' ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </button>
+            <ThemeToggle />
           </div>
         </div>
       </div>
@@ -218,16 +208,7 @@ const Dashboard = () => {
               </button>
               
               <div className="hidden md:block ml-4 pl-4 border-l border-blue-900/30">
-                <button
-                  className="text-gray-400 hover:text-white transition-colors"
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                >
-                  {theme === 'dark' ? (
-                    <Sun className="h-5 w-5" />
-                  ) : (
-                    <Moon className="h-5 w-5" />
-                  )}
-                </button>
+                <ThemeToggle />
               </div>
             </div>
           </div>
