@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { BarChart2, Twitter, Linkedin, Github } from "lucide-react";
 
@@ -15,13 +16,13 @@ const Footer = () => {
               Predict Tomorrow, Trade Today
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-blue-500">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-500">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-blue-500">
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-500">
                 <Linkedin className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-blue-500">
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-500">
                 <Github className="h-5 w-5" />
               </a>
             </div>
@@ -31,22 +32,22 @@ const Footer = () => {
             <h3 className="text-white font-semibold mb-4">Features</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/" className="text-gray-400 hover:text-blue-500 text-sm">
+                <Link to="/dashboard" className="text-gray-400 hover:text-blue-500 text-sm">
                   Stock Predictions
                 </Link>
               </li>
               <li>
-                <Link to="/" className="text-gray-400 hover:text-blue-500 text-sm">
+                <Link to="/dashboard" className="text-gray-400 hover:text-blue-500 text-sm">
                   Market Analysis
                 </Link>
               </li>
               <li>
-                <Link to="/" className="text-gray-400 hover:text-blue-500 text-sm">
+                <Link to="/dashboard" className="text-gray-400 hover:text-blue-500 text-sm">
                   AI Models
                 </Link>
               </li>
               <li>
-                <Link to="/" className="text-gray-400 hover:text-blue-500 text-sm">
+                <Link to="/dashboard" className="text-gray-400 hover:text-blue-500 text-sm">
                   Historical Data
                 </Link>
               </li>
@@ -83,17 +84,17 @@ const Footer = () => {
             <h3 className="text-white font-semibold mb-4">Resources</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/" className="text-gray-400 hover:text-blue-500 text-sm">
+                <Link to="/dashboard" className="text-gray-400 hover:text-blue-500 text-sm">
                   Documentation
                 </Link>
               </li>
               <li>
-                <Link to="/" className="text-gray-400 hover:text-blue-500 text-sm">
+                <Link to="/dashboard" className="text-gray-400 hover:text-blue-500 text-sm">
                   API
                 </Link>
               </li>
               <li>
-                <Link to="/" className="text-gray-400 hover:text-blue-500 text-sm">
+                <Link to="/dashboard" className="text-gray-400 hover:text-blue-500 text-sm">
                   Guides
                 </Link>
               </li>
