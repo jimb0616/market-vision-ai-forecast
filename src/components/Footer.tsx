@@ -1,6 +1,5 @@
-
 import { Link } from "react-router-dom";
-import { BarChart2, Twitter, Linkedin, GitHub } from "lucide-react";
+import { BarChart2, Twitter, Linkedin, Github } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -23,7 +22,7 @@ const Footer = () => {
                 <Linkedin className="h-5 w-5" />
               </a>
               <a href="#" className="text-gray-400 hover:text-blue-500">
-                <GitHub className="h-5 w-5" />
+                <Github className="h-5 w-5" />
               </a>
             </div>
           </div>
