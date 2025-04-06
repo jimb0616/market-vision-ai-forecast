@@ -45,12 +45,14 @@ const MarketSentimentHeatmap = ({ data }: MarketSentimentHeatmapProps) => {
           {sortedData.map((item) => (
             <div 
               key={item.sector}
-              className={`rounded-lg border px-3 py-2 flex justify-between items-center ${getSentimentColor(item.sentiment)}`}
+              className={`rounded-lg border px-3 py-2 ${getSentimentColor(item.sentiment)}`}
             >
-              <span className="font-medium text-sm">{item.sector}</span>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs">{getSentimentLabel(item.sentiment)}</span>
-                <div className="w-16 h-2 bg-gray-800 rounded-full overflow-hidden">
+              <div className="flex flex-col space-y-1">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-sm truncate mr-2">{item.sector}</span>
+                  <span className="text-xs whitespace-nowrap">{getSentimentLabel(item.sentiment)}</span>
+                </div>
+                <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
                   <div 
                     className={`h-full ${item.sentiment > 0 ? 'bg-market-green' : 'bg-market-red'}`}
                     style={{ width: `${Math.abs(item.sentiment) * 100}%` }}
