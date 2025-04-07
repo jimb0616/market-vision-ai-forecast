@@ -12,6 +12,7 @@ interface PricingPlanProps {
   features: string[];
   limitations?: string[];
   recommended?: boolean;
+  billingPeriod: "monthly" | "yearly";
   onSelect?: (id: string) => void;
 }
 
@@ -23,6 +24,7 @@ const PricingPlan = ({
   features, 
   limitations = [], 
   recommended = false,
+  billingPeriod = "monthly",
   onSelect 
 }: PricingPlanProps) => {
   return (
@@ -44,7 +46,7 @@ const PricingPlan = ({
       <CardContent className="flex-grow">
         <div className="mb-6">
           <span className="text-4xl font-bold">${price}</span>
-          <span className="text-gray-400 ml-2">/month</span>
+          <span className="text-gray-400 ml-2">/{billingPeriod === "monthly" ? "month" : "year"}</span>
         </div>
         
         <div className="space-y-4">

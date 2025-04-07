@@ -34,9 +34,10 @@ export interface CandleData {
   v: number[];  // Volumes
 }
 
+// Make sure this matches the interface in mockData.ts
 export interface ChartDataPoint {
   date: string;
-  price?: number;
+  price: number;  // Required to match mockData.ts
   prediction?: number;
   volume?: number;
 }
@@ -95,7 +96,7 @@ export const getStockCandles = async (
     if (data.s === 'ok' && data.t && data.c) {
       return data.t.map((timestamp, index) => ({
         date: new Date(timestamp * 1000).toISOString().split('T')[0],
-        price: data.c[index],
+        price: data.c[index],  // Make sure price is always defined
         volume: data.v ? data.v[index] : undefined
       }));
     }

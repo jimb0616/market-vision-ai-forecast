@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle } from "lucide-react";
@@ -85,6 +84,7 @@ const Plans = () => {
                 features={plan.features}
                 limitations={plan.limitations}
                 recommended={plan.recommended}
+                billingPeriod={billingPeriod}
                 onSelect={handleSelectPlan}
               />
             ))}
