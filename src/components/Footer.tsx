@@ -32,22 +32,22 @@ const Footer = () => {
             <h3 className="text-white font-semibold mb-4">Features</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/dashboard" className="text-gray-400 hover:text-blue-500 text-sm">
+                <Link to="/dashboard/predictions" className="text-gray-400 hover:text-blue-500 text-sm">
                   Stock Predictions
                 </Link>
               </li>
               <li>
-                <Link to="/dashboard" className="text-gray-400 hover:text-blue-500 text-sm">
+                <Link to="/dashboard/analytics" className="text-gray-400 hover:text-blue-500 text-sm">
                   Market Analysis
                 </Link>
               </li>
               <li>
-                <Link to="/dashboard" className="text-gray-400 hover:text-blue-500 text-sm">
+                <Link to="/dashboard/models" className="text-gray-400 hover:text-blue-500 text-sm">
                   AI Models
                 </Link>
               </li>
               <li>
-                <Link to="/dashboard" className="text-gray-400 hover:text-blue-500 text-sm">
+                <Link to="/dashboard/portfolio" className="text-gray-400 hover:text-blue-500 text-sm">
                   Historical Data
                 </Link>
               </li>

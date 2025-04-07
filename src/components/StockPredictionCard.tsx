@@ -1,8 +1,11 @@
 
+import { useState, useEffect } from "react";
 import { ArrowUpCircle, ArrowDownCircle, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { StockData } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
+import { getStockQuote, StockQuote } from "@/services/finnhubService";
+import { useQuery } from "@tanstack/react-query";
 
 interface StockPredictionCardProps {
   stock: StockData;
@@ -10,7 +13,15 @@ interface StockPredictionCardProps {
 }
 
 const StockPredictionCard = ({ stock, showActions = true }: StockPredictionCardProps) => {
-  const isPositive = stock.percentChange > 0;
+  const { data: quote, isLoading, error } = useQuery({
+    queryKey: ['stockQuote', stock.symbol],
+    queryFn: () => getStockQuote(stock.symbol),
+  });
+  
+  // Use live data if available, otherwise fall back to mock data
+  const currentPrice = quote?.c || stock.currentPrice;
+  const percentChange = quote?.dp || stock.percentChange;
+  const isPositive = percentChange > 0;
   const isPredictionPositive = stock.predictionDirection === 'up';
 
   return (
@@ -23,13 +34,19 @@ const StockPredictionCard = ({ stock, showActions = true }: StockPredictionCardP
               <span className="ml-2 text-xs text-gray-400">{stock.name}</span>
             </div>
             <div className="flex items-center mt-1">
-              <p className="text-xl font-bold">${stock.currentPrice.toFixed(2)}</p>
+              {isLoading ? (
+                <p className="text-xl font-bold">Loading...</p>
+              ) : error ? (
+                <p className="text-xl font-bold">${stock.currentPrice.toFixed(2)}</p>
+              ) : (
+                <p className="text-xl font-bold">${currentPrice.toFixed(2)}</p>
+              )}
               <div className={cn(
                 "flex items-center ml-2 text-sm",
                 isPositive ? "text-market-green" : "text-market-red"
               )}>
                 {isPositive ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />}
-                {isPositive ? "+" : ""}{stock.percentChange.toFixed(2)}%
+                {isPositive ? "+" : ""}{Math.abs(percentChange).toFixed(2)}%
               </div>
             </div>
           </div>
