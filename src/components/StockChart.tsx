@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { ChartDataPoint } from "@/lib/mockData";
 import { useQuery } from "@tanstack/react-query";
-import { getStockCandles } from "@/services/finnhubService";
+import { getStockCandles, ChartDataPoint as FinnhubChartDataPoint } from "@/services/finnhubService";
 
 interface StockChartProps {
   data: ChartDataPoint[];
@@ -33,18 +33,9 @@ const StockChart = ({
   const [chartData, setChartData] = useState<ChartDataPoint[]>(mockData);
   
   useEffect(() => {
-    if (stockCandles && stockCandles.s === 'ok' && stockCandles.t) {
-      const transformedData: ChartDataPoint[] = stockCandles.t.map((timestamp: number, index: number) => {
-        const date = new Date(timestamp * 1000);
-        return {
-          date: date.toISOString().split('T')[0],
-          price: stockCandles.c[index],
-          volume: stockCandles.v[index],
-        };
-      });
-      
+    if (stockCandles) {
       // Add prediction data (last 7 days)
-      const lastPrice = transformedData[transformedData.length - 1].price;
+      const lastPrice = stockCandles.length > 0 ? stockCandles[stockCandles.length - 1].price || 0 : 0;
       const predictionStartDate = new Date();
       
       const predictionData: ChartDataPoint[] = Array.from({ length: 7 }).map((_, i) => {
@@ -58,11 +49,12 @@ const StockChart = ({
         
         return {
           date: dateString,
+          price: undefined,
           prediction: predictedPrice,
         };
       });
       
-      setChartData([...transformedData, ...predictionData]);
+      setChartData([...stockCandles, ...predictionData]);
     }
   }, [stockCandles, symbol]);
 

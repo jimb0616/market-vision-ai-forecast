@@ -34,6 +34,13 @@ export interface CandleData {
   v: number[];  // Volumes
 }
 
+export interface ChartDataPoint {
+  date: string;
+  price?: number;
+  prediction?: number;
+  volume?: number;
+}
+
 // Get current stock quote
 export const getStockQuote = async (symbol: string): Promise<StockQuote> => {
   try {
@@ -72,7 +79,7 @@ export const getStockCandles = async (
   resolution: string = 'D', // D for daily
   from: number = Math.floor((Date.now() - 90 * 24 * 60 * 60 * 1000) / 1000), // 90 days ago
   to: number = Math.floor(Date.now() / 1000) // Now
-) => {
+): Promise<ChartDataPoint[]> => {
   try {
     const response = await fetch(
       `${BASE_URL}/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${from}&to=${to}&token=${FINNHUB_API_KEY}`
@@ -89,6 +96,7 @@ export const getStockCandles = async (
       return data.t.map((timestamp, index) => ({
         date: new Date(timestamp * 1000).toISOString().split('T')[0],
         price: data.c[index],
+        volume: data.v ? data.v[index] : undefined
       }));
     }
     
