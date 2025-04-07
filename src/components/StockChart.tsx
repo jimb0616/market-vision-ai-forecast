@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { ChartDataPoint } from "@/lib/mockData";
 import { useQuery } from "@tanstack/react-query";
-import { getStockCandles, ChartDataPoint as FinnhubChartDataPoint } from "@/services/finnhubService";
+import { getStockCandles } from "@/services/finnhubService";
 
 interface StockChartProps {
   data: ChartDataPoint[];
@@ -35,10 +35,10 @@ const StockChart = ({
   useEffect(() => {
     if (stockCandles) {
       // Add prediction data (last 7 days)
-      const lastPrice = stockCandles.length > 0 ? stockCandles[stockCandles.length - 1].price || 0 : 0;
+      const lastPrice = stockCandles.length > 0 ? stockCandles[stockCandles.length - 1].price : 0;
       const predictionStartDate = new Date();
       
-      const predictionData: ChartDataPoint[] = Array.from({ length: 7 }).map((_, i) => {
+      const predictionData = Array.from({ length: 7 }).map((_, i) => {
         const date = new Date(predictionStartDate);
         date.setDate(date.getDate() + i + 1);
         const dateString = date.toISOString().split('T')[0];
@@ -49,7 +49,7 @@ const StockChart = ({
         
         return {
           date: dateString,
-          price: undefined,
+          price: 0, // Set a default value to match the required type
           prediction: predictedPrice,
         };
       });

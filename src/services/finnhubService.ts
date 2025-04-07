@@ -1,4 +1,3 @@
-
 const FINNHUB_API_KEY = 'cvpd97hr01qve7io7tpgcvpd97hr01qve7io7tq0';
 const BASE_URL = 'https://finnhub.io/api/v1';
 
@@ -34,13 +33,8 @@ export interface CandleData {
   v: number[];  // Volumes
 }
 
-// Make sure this matches the interface in mockData.ts
-export interface ChartDataPoint {
-  date: string;
-  price: number;  // Required to match mockData.ts
-  prediction?: number;
-  volume?: number;
-}
+// Import ChartDataPoint from mockData to ensure we're using the same type
+import { ChartDataPoint } from "@/lib/mockData";
 
 // Get current stock quote
 export const getStockQuote = async (symbol: string): Promise<StockQuote> => {
@@ -96,7 +90,7 @@ export const getStockCandles = async (
     if (data.s === 'ok' && data.t && data.c) {
       return data.t.map((timestamp, index) => ({
         date: new Date(timestamp * 1000).toISOString().split('T')[0],
-        price: data.c[index],  // Make sure price is always defined
+        price: data.c[index],  // Price is now required as per mockData.ts definition
         volume: data.v ? data.v[index] : undefined
       }));
     }
