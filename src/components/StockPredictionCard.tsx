@@ -72,6 +72,7 @@ const StockPredictionCard = ({ stock, showActions = true }: StockPredictionCardP
                 )}>
                   {isPredictionPositive ? "Upward" : "Downward"} movement
                 </span>
+                <span className="ml-1 text-xs text-gray-400">(future trend)</span>
               </div>
               <div className="flex items-center">
                 <div className="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center">

@@ -24,6 +24,16 @@ export interface CompanyProfile {
   sector: string;
 }
 
+export interface CandleData {
+  c: number[];  // Close prices
+  h: number[];  // High prices
+  l: number[];  // Low prices
+  o: number[];  // Open prices
+  s: string;    // Status
+  t: number[];  // Timestamps
+  v: number[];  // Volumes
+}
+
 // Get current stock quote
 export const getStockQuote = async (symbol: string): Promise<StockQuote> => {
   try {
@@ -56,7 +66,7 @@ export const getCompanyProfile = async (symbol: string): Promise<CompanyProfile>
   }
 };
 
-// Get stock candles (historical data)
+// Get stock candles (historical data) and format to ChartDataPoint array
 export const getStockCandles = async (
   symbol: string, 
   resolution: string = 'D', // D for daily
@@ -72,7 +82,17 @@ export const getStockCandles = async (
       throw new Error(`Failed to fetch stock candles: ${response.status}`);
     }
     
-    return await response.json();
+    const data: CandleData = await response.json();
+    
+    // Format data for the chart component
+    if (data.s === 'ok' && data.t && data.c) {
+      return data.t.map((timestamp, index) => ({
+        date: new Date(timestamp * 1000).toISOString().split('T')[0],
+        price: data.c[index],
+      }));
+    }
+    
+    throw new Error('Invalid data format from API');
   } catch (error) {
     console.error(`Error fetching candles for ${symbol}:`, error);
     throw error;
