@@ -51,19 +51,31 @@ const getWithCache = async <T>(url: string, cacheKey: string): Promise<T> => {
     return cachedData.data as T;
   }
   
-  // Fetch fresh data
-  const response = await fetch(url);
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch data: ${response.status}`);
+  try {
+    // Fetch fresh data
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      console.error(`API error: ${response.status} for URL: ${url}`);
+      throw new Error(`Failed to fetch data: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Check for API-level errors
+    if (data.error) {
+      console.error(`API returned error: ${data.error}`);
+      throw new Error(data.error);
+    }
+    
+    // Update cache
+    cache.set(cacheKey, { data, timestamp: now });
+    
+    return data as T;
+  } catch (error) {
+    console.error(`Error fetching data from ${url}:`, error);
+    throw error;
   }
-  
-  const data = await response.json();
-  
-  // Update cache
-  cache.set(cacheKey, { data, timestamp: now });
-  
-  return data as T;
 };
 
 // Get current stock quote
@@ -92,6 +104,46 @@ export const getCompanyProfile = async (symbol: string): Promise<CompanyProfile>
   }
 };
 
+// Generate mock candle data when API limits are hit
+const generateMockCandleData = (symbol: string, days: number = 90): ChartDataPoint[] => {
+  // Get quote for the last price
+  let startPrice = 150; // Default start price
+  let lastPrice = 150;
+  
+  try {
+    // Try to get the actual quote first
+    const quote = cache.get(`quote_${symbol}`)?.data as StockQuote;
+    if (quote) {
+      lastPrice = quote.c;
+      startPrice = quote.pc;
+    }
+  } catch (e) {
+    console.log("Using default prices for mock data");
+  }
+  
+  const today = new Date();
+  const result: ChartDataPoint[] = [];
+  
+  // Generate past data
+  for (let i = days; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(today.getDate() - i);
+    
+    // Create some randomness but trend toward the last price
+    const randomWalk = Math.random() * 2 - 1; // Between -1 and 1
+    const priceChange = (randomWalk * 2) + ((lastPrice - startPrice) / days) * (days - i) / 5;
+    const dayPrice = startPrice + ((lastPrice - startPrice) * (days - i) / days) + priceChange;
+    
+    result.push({
+      date: date.toISOString().split('T')[0],
+      price: Math.max(1, parseFloat(dayPrice.toFixed(2))),
+      volume: Math.floor(Math.random() * 50000000) + 10000000
+    });
+  }
+  
+  return result;
+};
+
 // Get stock candles (historical data) and format to ChartDataPoint array
 export const getStockCandles = async (
   symbol: string, 
@@ -103,21 +155,52 @@ export const getStockCandles = async (
     const url = `${BASE_URL}/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${from}&to=${to}&token=${FINNHUB_API_KEY}`;
     const cacheKey = `candles_${symbol}_${resolution}_${from}_${to}`;
     
-    const data = await getWithCache<CandleData>(url, cacheKey);
-    
-    // Format data for the chart component
-    if (data.s === 'ok' && data.t && data.c) {
-      return data.t.map((timestamp, index) => ({
-        date: new Date(timestamp * 1000).toISOString().split('T')[0],
-        price: data.c[index],  // Price is now required as per mockData.ts definition
-        volume: data.v ? data.v[index] : undefined
-      }));
+    // First, try to get from cache
+    const cachedData = cache.get(cacheKey);
+    if (cachedData && (Date.now() - cachedData.timestamp) < CACHE_DURATION) {
+      return cachedData.data as ChartDataPoint[];
     }
     
-    throw new Error('Invalid data format from API');
+    // Fetch from API
+    try {
+      const response = await fetch(url);
+      
+      // If API returns an error, fall back to mock data
+      if (!response.ok || response.status === 403) {
+        console.log(`API limit reached or access denied for ${symbol}, using mock data`);
+        const mockData = generateMockCandleData(symbol);
+        cache.set(cacheKey, { data: mockData, timestamp: Date.now() });
+        return mockData;
+      }
+      
+      const data = await response.json() as CandleData;
+      
+      // Format data for the chart component
+      if (data.s === 'ok' && data.t && data.c) {
+        const formattedData = data.t.map((timestamp, index) => ({
+          date: new Date(timestamp * 1000).toISOString().split('T')[0],
+          price: data.c[index],
+          volume: data.v ? data.v[index] : undefined
+        }));
+        
+        cache.set(cacheKey, { data: formattedData, timestamp: Date.now() });
+        return formattedData;
+      }
+      
+      // If data is not in expected format, fall back to mock data
+      const mockData = generateMockCandleData(symbol);
+      cache.set(cacheKey, { data: mockData, timestamp: Date.now() });
+      return mockData;
+    } catch (error) {
+      console.error(`Error fetching candles for ${symbol}:`, error);
+      // Fall back to mock data on error
+      const mockData = generateMockCandleData(symbol);
+      cache.set(cacheKey, { data: mockData, timestamp: Date.now() });
+      return mockData;
+    }
   } catch (error) {
-    console.error(`Error fetching candles for ${symbol}:`, error);
-    throw error;
+    console.error(`Error in getStockCandles for ${symbol}:`, error);
+    return generateMockCandleData(symbol);
   }
 };
 
@@ -147,7 +230,7 @@ export const getMarketSentiment = async (symbol: string) => {
     return await getWithCache(url, cacheKey);
   } catch (error) {
     console.error(`Error fetching sentiment for ${symbol}:`, error);
-    throw error;
+    return { sentiment: { bullishPercent: 50 } }; // Return fallback data
   }
 };
 
@@ -179,8 +262,8 @@ export const refreshStockData = (symbol: string) => {
   
   // Return a promise that resolves when all data is refreshed
   return Promise.all([
-    getStockQuote(symbol),
-    getCompanyProfile(symbol),
-    getStockCandles(symbol)
+    getStockQuote(symbol).catch(() => null),
+    getCompanyProfile(symbol).catch(() => null),
+    getStockCandles(symbol).catch(() => generateMockCandleData(symbol))
   ]);
 };

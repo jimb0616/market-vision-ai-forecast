@@ -56,8 +56,13 @@ const MarketSentimentHeatmap = ({ data: initialData }: MarketSentimentHeatmapPro
     results.forEach((result, index) => {
       if (result.data && !result.isLoading) {
         const sectorName = sectorQueries[index].sector;
-        // Scale sentiment score between -1 and 1
-        const sentimentScore = (result.data.sentiment?.bullishPercent || 50) / 100 * 2 - 1;
+        // Safely access sentiment data with proper type checking
+        const sentimentData = result.data as any;
+        // Scale sentiment score between -1 and 1, with fallback to 0
+        const sentimentScore = sentimentData && sentimentData.sentiment && 
+          typeof sentimentData.sentiment.bullishPercent === 'number' 
+          ? (sentimentData.sentiment.bullishPercent / 100 * 2 - 1) 
+          : 0;
         
         newData.push({
           sector: sectorName,
