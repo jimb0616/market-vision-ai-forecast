@@ -33,28 +33,8 @@ const StockChart = ({
   const [chartData, setChartData] = useState<ChartDataPoint[]>(mockData);
   
   useEffect(() => {
-    if (stockCandles) {
-      // Add prediction data (last 7 days)
-      const lastPrice = stockCandles.length > 0 ? stockCandles[stockCandles.length - 1].price : 0;
-      const predictionStartDate = new Date();
-      
-      const predictionData = Array.from({ length: 7 }).map((_, i) => {
-        const date = new Date(predictionStartDate);
-        date.setDate(date.getDate() + i + 1);
-        const dateString = date.toISOString().split('T')[0];
-        
-        // Simple random walk prediction for demo purposes
-        const randomFactor = 1 + (Math.random() * 0.04 - 0.02); // -2% to +2%
-        const predictedPrice = lastPrice * Math.pow(randomFactor, i + 1);
-        
-        return {
-          date: dateString,
-          price: 0, // Set a default value to match the required type
-          prediction: predictedPrice,
-        };
-      });
-      
-      setChartData([...stockCandles, ...predictionData]);
+    if (stockCandles && stockCandles.length > 0) {
+      setChartData(stockCandles);
     }
   }, [stockCandles, symbol]);
 
@@ -134,7 +114,7 @@ const StockChart = ({
         
         <ResponsiveContainer width="100%" height={height}>
           <AreaChart
-            data={formattedData}
+            data={mockData}
             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
             onMouseMove={(e) => {
               if (e.activeTooltipIndex !== undefined) {
@@ -185,7 +165,7 @@ const StockChart = ({
             {/* Historical Price Area */}
             <Area 
               type="monotone" 
-              dataKey="value" 
+              dataKey="price" 
               stroke={color}
               fillOpacity={1}
               fill="url(#colorPrice)"
@@ -193,45 +173,21 @@ const StockChart = ({
               isAnimationActive={true}
               animationDuration={1500}
               dot={false}
-              // Render only up to the prediction start
-              isRange={true}
-              baseValue={minValue}
             />
             
-            {/* Prediction Area - rendered as a separate area for visual distinction */}
-            {predictionStartIndex > 0 && (
-              <Area 
-                type="monotone" 
-                dataKey="value" 
-                stroke="#7E22CE"
-                fillOpacity={0.8}
-                fill="url(#colorPrediction)"
-                isAnimationActive={true}
-                animationDuration={1500}
-                activeDot={{ r: 6, fill: "white", stroke: "#7E22CE", strokeWidth: 2 }}
-                dot={showFullData ? { r: 2, fill: "#7E22CE", stroke: "#7E22CE" } : false}
-                strokeDasharray="5 5"
-                // Only render from prediction start to end
-                isRange={true}
-                baseValue={minValue}
-                data={formattedData.slice(predictionStartIndex)}
-              />
-            )}
-            
-            {/* Today reference line */}
-            {predictionStartIndex > 0 && (
-              <ReferenceLine 
-                x={today} 
-                stroke="rgba(255, 255, 255, 0.3)" 
-                strokeDasharray="3 3"
-                label={{
-                  value: 'Today',
-                  position: 'insideTopRight',
-                  fill: '#94A3B8',
-                  fontSize: 10
-                }}
-              />
-            )}
+            {/* Prediction Area */}
+            <Area 
+              type="monotone" 
+              dataKey="prediction" 
+              stroke="#7E22CE"
+              fillOpacity={0.8}
+              fill="url(#colorPrediction)"
+              isAnimationActive={true}
+              animationDuration={1500}
+              activeDot={{ r: 6, fill: "white", stroke: "#7E22CE", strokeWidth: 2 }}
+              dot={showFullData ? { r: 2, fill: "#7E22CE", stroke: "#7E22CE" } : false}
+              strokeDasharray="5 5"
+            />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -313,7 +269,7 @@ const StockChart = ({
           {/* Historical Price Area */}
           <Area 
             type="monotone" 
-            dataKey="value" 
+            dataKey="price" 
             stroke={color}
             fillOpacity={1}
             fill="url(#colorPrice)"
@@ -321,30 +277,21 @@ const StockChart = ({
             isAnimationActive={true}
             animationDuration={1500}
             dot={false}
-            // Render only up to the prediction start
-            isRange={true}
-            baseValue={minValue}
           />
           
-          {/* Prediction Area - rendered as a separate area for visual distinction */}
-          {predictionStartIndex > 0 && (
-            <Area 
-              type="monotone" 
-              dataKey="value" 
-              stroke="#7E22CE"
-              fillOpacity={0.8}
-              fill="url(#colorPrediction)"
-              isAnimationActive={true}
-              animationDuration={1500}
-              activeDot={{ r: 6, fill: "white", stroke: "#7E22CE", strokeWidth: 2 }}
-              dot={showFullData ? { r: 2, fill: "#7E22CE", stroke: "#7E22CE" } : false}
-              strokeDasharray="5 5"
-              // Only render from prediction start to end
-              isRange={true}
-              baseValue={minValue}
-              data={formattedData.slice(predictionStartIndex)}
-            />
-          )}
+          {/* Prediction Area */}
+          <Area 
+            type="monotone" 
+            dataKey="prediction" 
+            stroke="#7E22CE"
+            fillOpacity={0.8}
+            fill="url(#colorPrediction)"
+            isAnimationActive={true}
+            animationDuration={1500}
+            activeDot={{ r: 6, fill: "white", stroke: "#7E22CE", strokeWidth: 2 }}
+            dot={showFullData ? { r: 2, fill: "#7E22CE", stroke: "#7E22CE" } : false}
+            strokeDasharray="5 5"
+          />
           
           {/* Today reference line */}
           {predictionStartIndex > 0 && (

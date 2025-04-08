@@ -141,6 +141,22 @@ const generateMockCandleData = (symbol: string, days: number = 90): ChartDataPoi
     });
   }
   
+  // Generate future data as predictions
+  const lastRealPrice = result[result.length - 1].price;
+  for (let i = 1; i <= 7; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    
+    // Simple random walk for predictions
+    const randomChange = (Math.random() * 0.04 - 0.02) * lastRealPrice; // -2% to +2%
+    const predictedPrice = lastRealPrice * (1 + (Math.random() * 0.01 - 0.005) * i) + randomChange;
+    
+    result.push({
+      date: date.toISOString().split('T')[0],
+      prediction: parseFloat(predictedPrice.toFixed(2))
+    });
+  }
+  
   return result;
 };
 
@@ -182,6 +198,24 @@ export const getStockCandles = async (
           price: data.c[index]
           // Don't include volume as it's not in the ChartDataPoint interface
         }));
+        
+        // Add prediction data for future dates
+        const lastPrice = formattedData[formattedData.length - 1].price;
+        const today = new Date();
+        
+        for (let i = 1; i <= 7; i++) {
+          const date = new Date(today);
+          date.setDate(today.getDate() + i);
+          
+          // Simple random walk for predictions
+          const randomChange = (Math.random() * 0.04 - 0.02) * lastPrice; // -2% to +2%
+          const predictedPrice = lastPrice * (1 + (Math.random() * 0.01 - 0.005) * i) + randomChange;
+          
+          formattedData.push({
+            date: date.toISOString().split('T')[0],
+            prediction: parseFloat(predictedPrice.toFixed(2))
+          });
+        }
         
         cache.set(cacheKey, { data: formattedData, timestamp: Date.now() });
         return formattedData;
