@@ -208,3 +208,27 @@ export const marketSentiment = [
   { sector: 'Industrials', sentiment: 0.29 },
   { sector: 'Communication Services', sentiment: 0.68 },
 ];
+import { generateChartData } from "./mockData";
+
+export const mockCandles = {
+  AAPL: {
+    c: generateChartData(180).map((d) => d.price ?? 0),
+    h: generateChartData(180).map((d) => (d.price ?? 0) + 2),
+    l: generateChartData(180).map((d) => (d.price ?? 0) - 2),
+    o: generateChartData(180).map((d) => (d.price ?? 0) - 1),
+    s: "ok",
+    t: generateChartData(180).map((_, i) => Math.floor(Date.now() / 1000) - (30 - i) * 86400),
+    v: generateChartData(180).map(() => Math.floor(Math.random() * 1000000)),
+  },
+  TSLA: {
+    c: generateChartData(230).map((d) => d.price ?? 0),
+    h: generateChartData(230).map((d) => (d.price ?? 0) + 2),
+    l: generateChartData(230).map((d) => (d.price ?? 0) - 2),
+    o: generateChartData(230).map((d) => (d.price ?? 0) - 1),
+    s: "ok",
+    t: generateChartData(230).map((_, i) => Math.floor(Date.now() / 1000) - (30 - i) * 86400),
+    v: generateChartData(230).map(() => Math.floor(Math.random() * 1000000)),
+  }
+  // Add more stocks if needed
+};
+
