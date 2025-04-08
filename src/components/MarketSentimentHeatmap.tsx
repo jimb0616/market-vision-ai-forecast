@@ -46,6 +46,8 @@ const MarketSentimentHeatmap = ({ data: initialData }: MarketSentimentHeatmapPro
       queryKey: query.queryKey,
       queryFn: query.queryFn,
       refetchOnWindowFocus: false,
+      retry: 1, // Only retry once to avoid excessive API calls
+      staleTime: 5 * 60 * 1000, // 5 minutes
     });
   });
   

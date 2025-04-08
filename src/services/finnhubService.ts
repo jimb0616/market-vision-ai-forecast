@@ -136,8 +136,8 @@ const generateMockCandleData = (symbol: string, days: number = 90): ChartDataPoi
     
     result.push({
       date: date.toISOString().split('T')[0],
-      price: Math.max(1, parseFloat(dayPrice.toFixed(2))),
-      volume: Math.floor(Math.random() * 50000000) + 10000000
+      price: Math.max(1, parseFloat(dayPrice.toFixed(2)))
+      // Don't include volume as it's not in the ChartDataPoint interface
     });
   }
   
@@ -179,8 +179,8 @@ export const getStockCandles = async (
       if (data.s === 'ok' && data.t && data.c) {
         const formattedData = data.t.map((timestamp, index) => ({
           date: new Date(timestamp * 1000).toISOString().split('T')[0],
-          price: data.c[index],
-          volume: data.v ? data.v[index] : undefined
+          price: data.c[index]
+          // Don't include volume as it's not in the ChartDataPoint interface
         }));
         
         cache.set(cacheKey, { data: formattedData, timestamp: Date.now() });
