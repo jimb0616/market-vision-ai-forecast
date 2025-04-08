@@ -4,6 +4,7 @@ export interface StockData {
   name: string;
   symbol: string;
   currentPrice: number;
+  mockCandles: number;
   previousClose: number;
   percentChange: number;
   predictionConfidence: number;
