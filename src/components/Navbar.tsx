@@ -29,13 +29,13 @@ const Navbar = () => {
               </button>
               <div className="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-market-charcoal border border-blue-900/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
                 <div className="py-1">
-                  <Link to="/" className="block px-4 py-2 text-sm text-gray-300 hover:bg-blue-800/20 hover:text-white">
+                  <Link to="/dashboard/predictions" className="block px-4 py-2 text-sm text-gray-300 hover:bg-blue-800/20 hover:text-white">
                     Stock Predictions
                   </Link>
-                  <Link to="/" className="block px-4 py-2 text-sm text-gray-300 hover:bg-blue-800/20 hover:text-white">
+                  <Link to="/dashboard/analytics" className="block px-4 py-2 text-sm text-gray-300 hover:bg-blue-800/20 hover:text-white">
                     Market Analysis
                   </Link>
-                  <Link to="/" className="block px-4 py-2 text-sm text-gray-300 hover:bg-blue-800/20 hover:text-white">
+                  <Link to="/dashboard/models" className="block px-4 py-2 text-sm text-gray-300 hover:bg-blue-800/20 hover:text-white">
                     AI Models
                   </Link>
                 </div>
@@ -85,6 +85,27 @@ const Navbar = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               Home
+            </Link>
+            <Link
+              to="/dashboard/predictions"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-blue-800/20"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Stock Predictions
+            </Link>
+            <Link
+              to="/dashboard/analytics"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-blue-800/20"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Market Analysis
+            </Link>
+            <Link
+              to="/dashboard/models"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-blue-800/20"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              AI Models
             </Link>
             <Link
               to="/plans"

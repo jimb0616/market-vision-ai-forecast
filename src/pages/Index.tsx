@@ -1,13 +1,16 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BarChart2, Cpu, Lock, Shield, LineChart, TrendingUp, Activity } from "lucide-react";
+import { ArrowRight, BarChart2, Cpu, Lock, Shield, LineChart, TrendingUp, Activity, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StockPredictionCard from "@/components/StockPredictionCard";
 import StockChart from "@/components/StockChart";
-import { popularStocks, generateChartData } from "@/lib/mockData";
+import { popularStocks } from "@/lib/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { getStockCandles, refreshStockData } from "@/services/finnhubService";
+import { useToast } from "@/components/ui/use-toast";
+import SmoothScrollArea from "@/components/SmoothScrollArea";
 
 const testimonials = [
   {
@@ -31,18 +34,40 @@ const testimonials = [
 ];
 
 const Index = () => {
-  const [chartData, setChartData] = useState({});
+  const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
-  useEffect(() => {
-    // Generate mock chart data for each stock
-    const stockChartData = {};
+  // Fetch AAPL stock data with more frequent updates
+  const { data: aaplData, isLoading, error, refetch } = useQuery({
+    queryKey: ['stockCandles', 'AAPL'],
+    queryFn: () => getStockCandles('AAPL'),
+    staleTime: 300000, // 5 minutes
+    refetchInterval: 300000, // Refresh every 5 minutes
+  });
+  
+  // Handle manual refresh of data
+  const handleRefreshData = async () => {
+    if (isRefreshing) return;
     
-    popularStocks.forEach(stock => {
-      stockChartData[stock.symbol] = generateChartData(stock.currentPrice, 0.03);
-    });
-    
-    setChartData(stockChartData);
-  }, []);
+    setIsRefreshing(true);
+    try {
+      await refreshStockData('AAPL');
+      await refetch();
+      toast({
+        title: "Data refreshed",
+        description: "AAPL chart data has been updated with the latest information.",
+      });
+    } catch (err) {
+      toast({
+        title: "Refresh failed",
+        description: "Could not refresh chart data. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Error refreshing data:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-market-navy">
@@ -82,15 +107,39 @@ const Index = () => {
             </div>
             
             <div className="flex-1 glass-card rounded-xl overflow-hidden p-4 w-full max-w-xl">
-              {chartData['AAPL'] && (
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <h3 className="text-lg font-bold text-white">Real-Time AAPL Data</h3>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-blue-400 hover:text-blue-300 p-1 h-auto"
+                  onClick={handleRefreshData}
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={cn("w-4 h-4 mr-1", isRefreshing && "animate-spin")} />
+                  {isRefreshing ? "Refreshing..." : "Refresh"}
+                </Button>
+              </div>
+              {aaplData ? (
                 <StockChart 
-                  data={chartData['AAPL']} 
+                  data={aaplData} 
                   symbol="AAPL" 
                   color="#3B82F6" 
                   height={350}
                   showFullData={true}
                 />
-              )}
+              ) : isLoading ? (
+                <div className="flex items-center justify-center h-[350px] bg-market-darkBlue/30 rounded-lg">
+                  <p className="text-gray-400">Loading AAPL data...</p>
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center h-[350px] bg-market-darkBlue/30 rounded-lg">
+                  <p className="text-red-400 mb-2">Error loading AAPL data</p>
+                  <Button variant="outline" size="sm" onClick={handleRefreshData}>Try Again</Button>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -291,6 +340,11 @@ const Index = () => {
       <Footer />
     </div>
   );
+};
+
+// Helper function for className conditionals
+const cn = (...classes: (string | boolean | undefined)[]) => {
+  return classes.filter(Boolean).join(" ");
 };
 
 export default Index;
