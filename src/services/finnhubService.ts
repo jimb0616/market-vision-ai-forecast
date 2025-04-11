@@ -1,4 +1,3 @@
-
 import { mockCandles as importedMockCandles } from "@/lib/mockData";
 
 // Chart data interface
@@ -117,13 +116,46 @@ export const getStockCandles = async (symbol: string): Promise<ChartDataPoint[]>
     const candles = mockCandles[symbol] || mockCandles['AAPL'];
     const chartData = processStockCandles(candles);
     const withPredictions = appendPredictionData(chartData);
-    return withPredictions;
+    
+    // Filter to only keep the most recent 10 days of historical data and 5 days of prediction
+    const today = new Date();
+    const tenDaysAgo = new Date(today);
+    tenDaysAgo.setDate(today.getDate() - 10);
+    
+    const filteredData = withPredictions.filter(point => {
+      const pointDate = new Date(point.date);
+      // Keep historical data from the last 10 days and predictions for the next 5 days
+      if (point.prediction) {
+        // For prediction data, only keep 5 days worth
+        return pointDate <= new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000);
+      } else {
+        // For historical data, only keep the last 10 days
+        return pointDate >= tenDaysAgo;
+      }
+    });
+    
+    return filteredData;
   } catch (error) {
     console.error(`Error fetching ${symbol} candles:`, error);
     const candles = mockCandles[symbol] || mockCandles['AAPL'];
     const chartData = processStockCandles(candles);
     const withPredictions = appendPredictionData(chartData);
-    return withPredictions;
+    
+    // Apply the same filtering here too
+    const today = new Date();
+    const tenDaysAgo = new Date(today);
+    tenDaysAgo.setDate(today.getDate() - 10);
+    
+    const filteredData = withPredictions.filter(point => {
+      const pointDate = new Date(point.date);
+      if (point.prediction) {
+        return pointDate <= new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000);
+      } else {
+        return pointDate >= tenDaysAgo;
+      }
+    });
+    
+    return filteredData;
   }
 };
 
@@ -182,17 +214,22 @@ const appendPredictionData = (chartData: ChartDataPoint[]): ChartDataPoint[] => 
   const trendFactor = 0.5 + Math.random();
   const volatility = 2 + Math.random() * 3;
   
-  for (let i = 1; i <= 7; i++) {
+  // Only add 5 days of prediction data
+  for (let i = 1; i <= 5; i++) {
     const date = new Date();
     date.setDate(date.getDate() + i);
     const dayString = date.toISOString().split('T')[0];
+    
+    // Generate a more realistic prediction based on the last price
+    // Use a small random factor but maintain a more realistic trend
     const priceChange = (Math.random() - 0.3) * volatility;
+    // Make sure predictions don't suddenly drop to zero
     const predictedPrice = lastPrice * (1 + (priceChange / 100) * i * trendFactor);
     const volume = Math.floor(Math.random() * 800000) + 200000;
     
     data.push({
       date: dayString,
-      price: Math.round(predictedPrice * 100) / 100,
+      price: undefined, // Set price to undefined for prediction data points
       prediction: Math.round(predictedPrice * 100) / 100,
       volume: volume
     });

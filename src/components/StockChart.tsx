@@ -38,11 +38,15 @@ const StockChart = ({
     }
   }, [stockCandles, symbol]);
 
-  // Find the index where predictions start (where price becomes undefined)
-  const predictionStartIndex = chartData.findIndex(point => point.price === undefined && point.prediction !== undefined);
+  // Find the index where predictions start (where prediction becomes defined and price is undefined)
+  const predictionStartIndex = chartData.findIndex(point => 
+    point.price === undefined && point.prediction !== undefined
+  );
   
   // Today's date (last real data point)
-  const today = predictionStartIndex > 0 ? chartData[predictionStartIndex - 1].date : chartData[chartData.length - 1].date;
+  const today = predictionStartIndex > 0 
+    ? chartData[predictionStartIndex - 1].date 
+    : chartData[chartData.length - 1].date;
   
   // Custom tooltip formatter
   const formatTooltip = (value: number) => {
@@ -66,8 +70,11 @@ const StockChart = ({
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
   
-  // Determine min and max values for Y axis
-  const allValues = formattedData.map(item => item.value).filter(Boolean) as number[];
+  // Determine min and max values for Y axis (excluding zero values that might be errors)
+  const allValues = formattedData
+    .map(item => item.value)
+    .filter(value => value !== undefined && value > 0) as number[];
+    
   const minValue = Math.min(...allValues) * 0.98;
   const maxValue = Math.max(...allValues) * 1.02;
   
@@ -200,7 +207,7 @@ const StockChart = ({
       <div className="flex justify-between items-center mb-4">
         <div>
           <h3 className="text-lg font-bold text-white">{symbol} {showFullData ? "Stock Price" : "Preview"}</h3>
-          <p className="text-sm text-gray-400">Historical data with AI predictions</p>
+          <p className="text-sm text-gray-400">Last 10 days with 5-day AI prediction</p>
         </div>
         {showFullData && (
           <div className="flex items-center space-x-4">
@@ -245,7 +252,7 @@ const StockChart = ({
             axisLine={{ stroke: '#334155' }}
             tickLine={{ stroke: '#334155' }}
             padding={{ left: 5, right: 5 }}
-            interval={showFullData ? "preserveEnd" : 4}
+            interval={showFullData ? "preserveEnd" : "preserveEnd"}
           />
           <YAxis 
             domain={[minValue, maxValue]}
