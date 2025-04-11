@@ -1,6 +1,7 @@
+
 import { useState, useRef, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { ChartDataPoint } from "@/lib/mockData";
+import { ChartDataPoint } from "@/services/finnhubService";
 import { useQuery } from "@tanstack/react-query";
 import { getStockCandles } from "@/services/finnhubService";
 
@@ -165,7 +166,7 @@ const StockChart = ({
                 backgroundColor: 'rgba(15, 23, 42, 0.9)', 
                 border: '1px solid rgba(59, 130, 246, 0.3)',
                 borderRadius: '0.375rem',
-                color: 'white',
+                color: '#E5DEFF',
               }}
             />
             
@@ -252,7 +253,7 @@ const StockChart = ({
             axisLine={{ stroke: '#334155' }}
             tickLine={{ stroke: '#334155' }}
             padding={{ left: 5, right: 5 }}
-            interval={showFullData ? "preserveEnd" : "preserveEnd"}
+            interval={showFullData ? "preserveStart" : "preserveEnd"}
           />
           <YAxis 
             domain={[minValue, maxValue]}
@@ -269,7 +270,7 @@ const StockChart = ({
               backgroundColor: 'rgba(15, 23, 42, 0.9)', 
               border: '1px solid rgba(59, 130, 246, 0.3)',
               borderRadius: '0.375rem',
-              color: 'white',
+              color: '#E5DEFF',
             }}
           />
           
