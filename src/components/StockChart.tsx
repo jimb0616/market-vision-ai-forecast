@@ -149,7 +149,7 @@ const StockChart = ({
               axisLine={{ stroke: '#334155' }}
               tickLine={{ stroke: '#334155' }}
               padding={{ left: 5, right: 5 }}
-              interval={showFullData ? "preserveEnd" : 4}
+              interval={showFullData ? "preserveStart" : "preserveEnd"}
             />
             <YAxis 
               domain={[minValue, maxValue]}

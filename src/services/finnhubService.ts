@@ -1,9 +1,10 @@
+
 import { mockCandles as importedMockCandles } from "@/lib/mockData";
 
 // Chart data interface
 export interface ChartDataPoint {
   date: string;
-  price: number;
+  price?: number;
   prediction?: number; // Optional prediction field
   volume?: number;     // Add volume field
 }
@@ -210,27 +211,47 @@ const appendPredictionData = (chartData: ChartDataPoint[]): ChartDataPoint[] => 
   if (!chartData || chartData.length === 0) return [];
 
   const data = [...chartData];
-  const lastPrice = data[data.length - 1].price;
-  const trendFactor = 0.5 + Math.random();
-  const volatility = 2 + Math.random() * 3;
+  const lastPrice = data[data.length - 1].price || 0;
+  
+  // Create more dynamic prediction trends
+  // Randomly determine if we'll have an upward or downward trend
+  const trendDirection = Math.random() > 0.5 ? 1 : -1;
+  const trendStrength = 0.5 + Math.random() * 1.5; // Stronger trend factor
+  const volatility = 1 + Math.random() * 3; // Increase volatility for more interesting patterns
+  
+  // Get the average daily change from the last few days to create predictions that follow the trend
+  const recentPrices = data.slice(-5).map(d => d.price || 0);
+  const avgDailyChange = recentPrices.length > 1 
+    ? (recentPrices[recentPrices.length-1] - recentPrices[0]) / (recentPrices.length - 1)
+    : 0;
+  
+  // Use a blend of the recent trend and random variation
+  const baseChange = avgDailyChange * 0.7 + (trendDirection * trendStrength * lastPrice * 0.01);
   
   // Only add 5 days of prediction data
+  let currentPrice = lastPrice;
   for (let i = 1; i <= 5; i++) {
     const date = new Date();
     date.setDate(date.getDate() + i);
     const dayString = date.toISOString().split('T')[0];
     
-    // Generate a more realistic prediction based on the last price
-    // Use a small random factor but maintain a more realistic trend
-    const priceChange = (Math.random() - 0.3) * volatility;
-    // Make sure predictions don't suddenly drop to zero
-    const predictedPrice = lastPrice * (1 + (priceChange / 100) * i * trendFactor);
+    // Create more realistic and varied prediction patterns
+    // Use noise that varies day to day for more interesting patterns
+    const noise = (Math.random() - 0.5) * volatility;
+    const dailyChange = baseChange + noise;
+    
+    // Apply the daily change to current price
+    currentPrice += dailyChange;
+    
+    // Make sure predictions never go negative
+    if (currentPrice <= 0) currentPrice = lastPrice * 0.8;
+    
     const volume = Math.floor(Math.random() * 800000) + 200000;
     
     data.push({
       date: dayString,
       price: undefined, // Set price to undefined for prediction data points
-      prediction: Math.round(predictedPrice * 100) / 100,
+      prediction: Math.round(currentPrice * 100) / 100,
       volume: volume
     });
   }
