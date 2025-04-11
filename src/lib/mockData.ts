@@ -22,6 +22,23 @@ export interface StockData {
   industry: string;
 }
 
+// Define subscription plan interface
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  features: string[];
+  limitations: string[];
+  recommended: boolean;
+}
+
+// Define sentiment data
+export interface MarketSentimentItem {
+  sector: string;
+  sentiment: number;
+}
+
 // Define popular stocks
 export const popularStocks: StockData[] = [
   {
@@ -206,3 +223,77 @@ export const mockCandles = {
     v: generateChartData(512).map(() => Math.floor(Math.random() * 1000000)),
   }
 };
+
+// Add marketSentiment data
+export const marketSentiment: MarketSentimentItem[] = [
+  { sector: "Technology", sentiment: 0.8 },
+  { sector: "Healthcare", sentiment: 0.3 },
+  { sector: "Financial", sentiment: -0.2 },
+  { sector: "Consumer", sentiment: 0.5 },
+  { sector: "Industrial", sentiment: -0.4 },
+  { sector: "Energy", sentiment: -0.6 },
+  { sector: "Utilities", sentiment: 0.1 },
+  { sector: "Materials", sentiment: -0.3 },
+  { sector: "Real Estate", sentiment: -0.5 },
+  { sector: "Communication", sentiment: 0.6 }
+];
+
+// Add subscription plans
+export const subscriptionPlans: SubscriptionPlan[] = [
+  {
+    id: "standard",
+    name: "Standard",
+    price: 9.99,
+    description: "Basic AI predictions for casual investors",
+    features: [
+      "Access to top 10 stock predictions",
+      "Basic market sentiment analysis",
+      "24-hour prediction window",
+      "Email support"
+    ],
+    limitations: [
+      "Limited to 10 stocks",
+      "No custom alerts",
+      "No API access"
+    ],
+    recommended: false
+  },
+  {
+    id: "intermediate",
+    name: "Intermediate",
+    price: 19.99,
+    description: "Advanced predictions for active traders",
+    features: [
+      "Access to 50 stock predictions",
+      "Detailed market sentiment analysis",
+      "72-hour prediction window",
+      "Custom price alerts",
+      "Limited API access",
+      "Priority email support"
+    ],
+    limitations: [
+      "Limited to 50 stocks",
+      "No historical prediction analysis",
+      "No portfolio integration"
+    ],
+    recommended: true
+  },
+  {
+    id: "advanced",
+    name: "Advanced",
+    price: 39.99,
+    description: "Premium insights for professional traders",
+    features: [
+      "Access to 200+ stock predictions",
+      "Full market sentiment analysis",
+      "7-day prediction window",
+      "Advanced custom alerts",
+      "Full API access",
+      "Historical prediction analysis",
+      "Portfolio integration",
+      "24/7 priority support"
+    ],
+    limitations: [],
+    recommended: false
+  }
+];

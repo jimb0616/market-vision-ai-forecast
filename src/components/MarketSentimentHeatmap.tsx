@@ -1,13 +1,8 @@
-
 import { useMemo, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getMarketSentiment } from "@/services/finnhubService";
 import { useQuery } from "@tanstack/react-query";
-
-interface MarketSentimentItem {
-  sector: string;
-  sentiment: number;
-}
+import { MarketSentimentItem } from "@/lib/mockData";
 
 interface MarketSentimentHeatmapProps {
   data: MarketSentimentItem[];
@@ -34,7 +29,7 @@ const MarketSentimentHeatmap = ({ data: initialData }: MarketSentimentHeatmapPro
   const sectorQueries = Object.entries(SECTOR_STOCKS).map(([sector, symbol]) => {
     return {
       queryKey: ['sentiment', symbol],
-      queryFn: () => getMarketSentiment(symbol),
+      queryFn: () => getMarketSentiment(),
       sector,
       symbol
     };
