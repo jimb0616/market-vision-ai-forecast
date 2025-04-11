@@ -35,7 +35,11 @@ const StockChart = ({
   
   useEffect(() => {
     if (stockCandles && stockCandles.length > 0) {
-      setChartData(stockCandles);
+      // Sort by date to ensure proper ordering
+      const sortedData = [...stockCandles].sort((a, b) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+      setChartData(sortedData);
     }
   }, [stockCandles, symbol]);
 
@@ -149,7 +153,7 @@ const StockChart = ({
               axisLine={{ stroke: '#334155' }}
               tickLine={{ stroke: '#334155' }}
               padding={{ left: 5, right: 5 }}
-              interval={showFullData ? "preserveStart" : "preserveEnd"}
+              interval="preserveEnd"
             />
             <YAxis 
               domain={[minValue, maxValue]}
@@ -253,7 +257,7 @@ const StockChart = ({
             axisLine={{ stroke: '#334155' }}
             tickLine={{ stroke: '#334155' }}
             padding={{ left: 5, right: 5 }}
-            interval={showFullData ? "preserveStart" : "preserveEnd"}
+            interval={4}
           />
           <YAxis 
             domain={[minValue, maxValue]}

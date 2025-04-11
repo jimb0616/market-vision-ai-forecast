@@ -1,4 +1,3 @@
-
 import { mockCandles as importedMockCandles } from "@/lib/mockData";
 
 // Chart data interface
@@ -135,7 +134,8 @@ export const getStockCandles = async (symbol: string): Promise<ChartDataPoint[]>
       }
     });
     
-    return filteredData;
+    // Ensure dates are in ascending order
+    return filteredData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   } catch (error) {
     console.error(`Error fetching ${symbol} candles:`, error);
     const candles = mockCandles[symbol] || mockCandles['AAPL'];
@@ -156,7 +156,8 @@ export const getStockCandles = async (symbol: string): Promise<ChartDataPoint[]>
       }
     });
     
-    return filteredData;
+    // Ensure dates are in ascending order
+    return filteredData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }
 };
 
@@ -243,8 +244,8 @@ const appendPredictionData = (chartData: ChartDataPoint[]): ChartDataPoint[] => 
     // Apply the daily change to current price
     currentPrice += dailyChange;
     
-    // Make sure predictions never go negative
-    if (currentPrice <= 0) currentPrice = lastPrice * 0.8;
+    // Make sure predictions never go below 10% of the last price
+    if (currentPrice <= lastPrice * 0.1) currentPrice = lastPrice * 0.15 + Math.random() * lastPrice * 0.1;
     
     const volume = Math.floor(Math.random() * 800000) + 200000;
     
