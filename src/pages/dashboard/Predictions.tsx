@@ -7,12 +7,38 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { refreshStockData } from "@/services/finnhubService";
+import { refreshStockData, getStockCandles } from "@/services/finnhubService";
+import { useQuery } from "@tanstack/react-query";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+
+// Define time range type
+type TimeRange = "1D" | "1W" | "1M" | "3M" | "1Y" | "ALL";
 
 const Predictions = () => {
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedStock, setSelectedStock] = useState("AAPL");
+  const [timeRange, setTimeRange] = useState<TimeRange>("1M");
+  
+  // Get days count based on selected time range
+  const getDaysCount = (range: TimeRange): number => {
+    switch (range) {
+      case "1D": return 1;
+      case "1W": return 7;
+      case "1M": return 30;
+      case "3M": return 90;
+      case "1Y": return 365;
+      case "ALL": return 730; // 2 years max for "ALL"
+      default: return 30;
+    }
+  };
+  
+  // Fetch chart data with time range
+  const { data: chartData, isLoading, refetch } = useQuery({
+    queryKey: ['stockCandles', selectedStock, timeRange],
+    queryFn: () => getStockCandles(selectedStock, getDaysCount(timeRange)),
+    staleTime: 300000, // 5 minutes
+  });
   
   const handleRefresh = async () => {
     if (isRefreshing) return;
@@ -20,6 +46,7 @@ const Predictions = () => {
     setIsRefreshing(true);
     try {
       await refreshStockData(selectedStock);
+      await refetch();
       toast({
         title: "Data refreshed",
         description: `${selectedStock} prediction data has been updated.`,
@@ -37,6 +64,10 @@ const Predictions = () => {
   
   const handleStockChange = (symbol: string) => {
     setSelectedStock(symbol);
+  };
+  
+  const handleTimeRangeChange = (value: TimeRange) => {
+    setTimeRange(value);
   };
 
   return (
@@ -75,13 +106,37 @@ const Predictions = () => {
               ))}
             </div>
             
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-gray-400">Time Range:</h3>
+              <ToggleGroup 
+                type="single" 
+                value={timeRange} 
+                onValueChange={(value) => value && handleTimeRangeChange(value as TimeRange)}
+                className="flex items-center"
+              >
+                <ToggleGroupItem value="1D" size="sm" className="h-7 text-xs">1D</ToggleGroupItem>
+                <ToggleGroupItem value="1W" size="sm" className="h-7 text-xs">1W</ToggleGroupItem>
+                <ToggleGroupItem value="1M" size="sm" className="h-7 text-xs">1M</ToggleGroupItem>
+                <ToggleGroupItem value="3M" size="sm" className="h-7 text-xs">3M</ToggleGroupItem>
+                <ToggleGroupItem value="1Y" size="sm" className="h-7 text-xs">1Y</ToggleGroupItem>
+                <ToggleGroupItem value="ALL" size="sm" className="h-7 text-xs">All</ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+            
             <div className="h-[400px]">
-              <StockChart 
-                data={[]} 
-                symbol={selectedStock} 
-                height={350} 
-                showFullData={true} 
-              />
+              {isLoading ? (
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-blue-400 animate-pulse">Loading chart data...</p>
+                </div>
+              ) : (
+                <StockChart 
+                  data={chartData || []} 
+                  symbol={selectedStock} 
+                  height={350} 
+                  showFullData={true}
+                  timeRange={timeRange}
+                />
+              )}
             </div>
             
             <div className="mt-6 bg-market-navy/50 p-4 rounded-lg">

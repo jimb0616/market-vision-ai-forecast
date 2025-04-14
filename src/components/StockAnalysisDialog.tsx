@@ -10,6 +10,7 @@ import StockChart from "./StockChart";
 import { Calendar, DollarSign, BarChart2, Layers, Activity } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
+import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 
 interface StockAnalysisDialogProps {
   stock: StockData;
@@ -17,13 +18,30 @@ interface StockAnalysisDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Define time range options
+export type TimeRange = "1D" | "1W" | "1M" | "3M" | "1Y" | "ALL";
+
 const StockAnalysisDialog = ({ stock, open, onOpenChange }: StockAnalysisDialogProps) => {
   const [selectedTab, setSelectedTab] = useState("chart");
+  const [timeRange, setTimeRange] = useState<TimeRange>("1M");
   
-  // Fetch stock candle data
-  const { data: chartData, isLoading: chartLoading } = useQuery({
-    queryKey: ['stockCandles', stock.symbol],
-    queryFn: () => getStockCandles(stock.symbol),
+  // Get days count based on selected time range
+  const getDaysCount = (range: TimeRange): number => {
+    switch (range) {
+      case "1D": return 1;
+      case "1W": return 7;
+      case "1M": return 30;
+      case "3M": return 90;
+      case "1Y": return 365;
+      case "ALL": return 730; // 2 years max for "ALL"
+      default: return 30;
+    }
+  };
+  
+  // Fetch stock candle data with the selected time range
+  const { data: chartData, isLoading: chartLoading, refetch: refetchChart } = useQuery({
+    queryKey: ['stockCandles', stock.symbol, timeRange],
+    queryFn: () => getStockCandles(stock.symbol, getDaysCount(timeRange)),
     enabled: open,
     staleTime: 300000, // 5 minutes
   });
@@ -35,6 +53,11 @@ const StockAnalysisDialog = ({ stock, open, onOpenChange }: StockAnalysisDialogP
     enabled: open,
     staleTime: 60000, // 1 minute
   });
+  
+  // Handle time range change
+  const handleTimeRangeChange = (value: TimeRange) => {
+    setTimeRange(value);
+  };
   
   // Format date for display
   const formatDate = (timestamp: number) => {
@@ -120,29 +143,22 @@ const StockAnalysisDialog = ({ stock, open, onOpenChange }: StockAnalysisDialogP
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg text-white flex items-center justify-between">
                   Price History & Prediction
-                  <div className="flex items-center space-x-2 text-sm font-normal">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs">
-                      1D
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs">
-                      1W
-                    </Button>
-                    <Button variant="ghost" size="sm" className="bg-blue-900/30 h-7 text-xs">
-                      1M
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs">
-                      3M
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs">
-                      1Y
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs">
-                      All
-                    </Button>
-                  </div>
+                  <ToggleGroup 
+                    type="single" 
+                    value={timeRange} 
+                    onValueChange={(value) => value && handleTimeRangeChange(value as TimeRange)}
+                    className="flex items-center space-x-1"
+                  >
+                    <ToggleGroupItem value="1D" size="sm" className="h-7 text-xs">1D</ToggleGroupItem>
+                    <ToggleGroupItem value="1W" size="sm" className="h-7 text-xs">1W</ToggleGroupItem>
+                    <ToggleGroupItem value="1M" size="sm" className="h-7 text-xs">1M</ToggleGroupItem>
+                    <ToggleGroupItem value="3M" size="sm" className="h-7 text-xs">3M</ToggleGroupItem>
+                    <ToggleGroupItem value="1Y" size="sm" className="h-7 text-xs">1Y</ToggleGroupItem>
+                    <ToggleGroupItem value="ALL" size="sm" className="h-7 text-xs">All</ToggleGroupItem>
+                  </ToggleGroup>
                 </CardTitle>
                 <CardDescription className="text-gray-400">
-                  Historical data with 7-day AI prediction
+                  Historical data with {timeRange === "1D" ? "1-day" : timeRange === "1W" ? "7-day" : "7-day"} AI prediction
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -157,6 +173,7 @@ const StockAnalysisDialog = ({ stock, open, onOpenChange }: StockAnalysisDialogP
                     color="#3B82F6" 
                     height={400}
                     showFullData={true}
+                    timeRange={timeRange}
                   />
                 ) : (
                   <div className="h-[400px] flex items-center justify-center">
