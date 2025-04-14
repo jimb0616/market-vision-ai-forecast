@@ -1,3 +1,4 @@
+
 import { mockCandles as importedMockCandles } from "@/lib/mockData";
 
 // Chart data interface
@@ -212,7 +213,8 @@ const appendPredictionData = (chartData: ChartDataPoint[]): ChartDataPoint[] => 
   if (!chartData || chartData.length === 0) return [];
 
   const data = [...chartData];
-  const lastPrice = data[data.length - 1].price || 0;
+  const lastPoint = data[data.length - 1];
+  const lastPrice = lastPoint.price || 0;
   
   // Create more dynamic prediction trends
   // Randomly determine if we'll have an upward or downward trend
@@ -244,8 +246,12 @@ const appendPredictionData = (chartData: ChartDataPoint[]): ChartDataPoint[] => 
     // Apply the daily change to current price
     currentPrice += dailyChange;
     
-    // Make sure predictions never go below 10% of the last price
-    if (currentPrice <= lastPrice * 0.1) currentPrice = lastPrice * 0.15 + Math.random() * lastPrice * 0.1;
+    // Make sure predictions never go below 10% of the last price or above 200% of the last price
+    if (currentPrice <= lastPrice * 0.1) {
+      currentPrice = lastPrice * 0.15 + Math.random() * lastPrice * 0.1;
+    } else if (currentPrice >= lastPrice * 2) {
+      currentPrice = lastPrice * 1.9 - Math.random() * lastPrice * 0.1;
+    }
     
     const volume = Math.floor(Math.random() * 800000) + 200000;
     
