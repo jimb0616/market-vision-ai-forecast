@@ -12,6 +12,67 @@ interface StockChartProps {
   showFullData?: boolean;
 }
 
+const generateFallbackData = (symbol: string, historyDays: number, futureDays: number): ChartDataPoint[] => {
+  const result: ChartDataPoint[] = [];
+  const today = new Date();
+  
+  // Set base price based on stock symbol
+  let basePrice = 180; // Default for AAPL
+  if (symbol === 'TSLA') basePrice = 235;
+  if (symbol === 'MSFT') basePrice = 372;
+  if (symbol === 'AMZN') basePrice = 182;
+  if (symbol === 'GOOG') basePrice = 145;
+  if (symbol === 'META') basePrice = 512;
+  
+  // Generate historical data
+  let currentPrice = basePrice;
+  for (let i = historyDays; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    const change = (Math.random() - 0.4) * basePrice * 0.01; // Slight upward bias
+    currentPrice += change;
+    
+    result.push({
+      date: date.toISOString().split('T')[0],
+      price: Math.round(currentPrice * 100) / 100,
+      volume: Math.floor(Math.random() * 1000000) + 100000
+    });
+  }
+  
+  // Generate future prediction data
+  const lastPrice = result[result.length - 1].price || basePrice;
+  let predictionPrice = lastPrice;
+  
+  // Randomly decide trend direction
+  const trendUp = Math.random() > 0.5;
+  const trendFactor = 0.5 + Math.random() * 1.5;
+  
+  for (let i = 1; i <= futureDays; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    
+    // Create change based on trend direction
+    const dailyChangePct = (Math.random() * 0.02) * (trendUp ? 1 : -1) * trendFactor;
+    predictionPrice += predictionPrice * dailyChangePct;
+    
+    // Keep prediction price reasonable
+    if (predictionPrice < lastPrice * 0.85) {
+      predictionPrice = lastPrice * 0.85 + Math.random() * lastPrice * 0.05;
+    } else if (predictionPrice > lastPrice * 1.15) {
+      predictionPrice = lastPrice * 1.15 - Math.random() * lastPrice * 0.05;
+    }
+    
+    result.push({
+      date: date.toISOString().split('T')[0],
+      price: undefined,
+      prediction: Math.round(predictionPrice * 100) / 100,
+      volume: Math.floor(Math.random() * 800000) + 200000
+    });
+  }
+  
+  return result;
+};
+
 const StockChart = ({ 
   data: mockData, 
   symbol, 
@@ -57,8 +118,31 @@ const StockChart = ({
     return [`$${value.toFixed(2)}`, ''];
   };
   
-  // Format data for display
-  const formattedData = chartData.map(item => {
+  // Format data for display - ensure no gaps between historical and prediction data
+  const formattedData = chartData.map((item, index) => {
+    // For the last historical data point, include both price and prediction
+    if (predictionStartIndex > 0 && index === predictionStartIndex - 1) {
+      return {
+        ...item,
+        // For the chart - combine price and prediction into a single value for display
+        value: item.price,
+        prediction: item.price, // Add prediction to bridge the gap
+        isPrediction: false
+      };
+    }
+    
+    // For the first prediction point, ensure it connects with the last historical point
+    if (index === predictionStartIndex) {
+      const lastHistoricalPrice = chartData[predictionStartIndex - 1]?.price;
+      return {
+        ...item,
+        value: item.prediction,
+        price: undefined, // Keep as undefined to maintain correct categorization
+        prediction: item.prediction || lastHistoricalPrice, // Use last price if prediction is somehow missing
+        isPrediction: true
+      };
+    }
+    
     return {
       ...item,
       // For the chart - combine price and prediction into a single value for display
@@ -101,7 +185,6 @@ const StockChart = ({
   
   if (error) {
     console.error("Error loading stock data:", error);
-    // Fall back to using the mock data directly instead of showing error
     return (
       <div className="relative" ref={chartRef}>
         {/* Chart Title */}
@@ -185,6 +268,7 @@ const StockChart = ({
               isAnimationActive={true}
               animationDuration={1500}
               dot={false}
+              connectNulls={true}
             />
             
             {/* Prediction Area */}
@@ -199,74 +283,13 @@ const StockChart = ({
               activeDot={{ r: 6, fill: "white", stroke: "#7E22CE", strokeWidth: 2 }}
               dot={showFullData ? { r: 2, fill: "#7E22CE", stroke: "#7E22CE" } : false}
               strokeDasharray="5 5"
+              connectNulls={true}
             />
           </AreaChart>
         </ResponsiveContainer>
       </div>
     );
   }
-  
-  // Function to generate fallback data in case of error
-  const generateFallbackData = (symbol: string, historyDays: number, futureDays: number): ChartDataPoint[] => {
-    const result: ChartDataPoint[] = [];
-    const today = new Date();
-    
-    // Set base price based on stock symbol
-    let basePrice = 180; // Default for AAPL
-    if (symbol === 'TSLA') basePrice = 235;
-    if (symbol === 'MSFT') basePrice = 372;
-    if (symbol === 'AMZN') basePrice = 182;
-    if (symbol === 'GOOG') basePrice = 145;
-    if (symbol === 'META') basePrice = 512;
-    
-    // Generate historical data
-    let currentPrice = basePrice;
-    for (let i = historyDays; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      const change = (Math.random() - 0.4) * basePrice * 0.01; // Slight upward bias
-      currentPrice += change;
-      
-      result.push({
-        date: date.toISOString().split('T')[0],
-        price: Math.round(currentPrice * 100) / 100,
-        volume: Math.floor(Math.random() * 1000000) + 100000
-      });
-    }
-    
-    // Generate future prediction data
-    const lastPrice = result[result.length - 1].price || basePrice;
-    let predictionPrice = lastPrice;
-    
-    // Randomly decide trend direction
-    const trendUp = Math.random() > 0.5;
-    const trendFactor = 0.5 + Math.random() * 1.5;
-    
-    for (let i = 1; i <= futureDays; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      
-      // Create change based on trend direction
-      const dailyChangePct = (Math.random() * 0.02) * (trendUp ? 1 : -1) * trendFactor;
-      predictionPrice += predictionPrice * dailyChangePct;
-      
-      // Keep prediction price reasonable
-      if (predictionPrice < lastPrice * 0.85) {
-        predictionPrice = lastPrice * 0.85 + Math.random() * lastPrice * 0.05;
-      } else if (predictionPrice > lastPrice * 1.15) {
-        predictionPrice = lastPrice * 1.15 - Math.random() * lastPrice * 0.05;
-      }
-      
-      result.push({
-        date: date.toISOString().split('T')[0],
-        price: undefined,
-        prediction: Math.round(predictionPrice * 100) / 100,
-        volume: Math.floor(Math.random() * 800000) + 200000
-      });
-    }
-    
-    return result;
-  };
   
   return (
     <div className="relative" ref={chartRef}>
@@ -351,6 +374,7 @@ const StockChart = ({
             isAnimationActive={true}
             animationDuration={1500}
             dot={false}
+            connectNulls={true}
           />
           
           {/* Prediction Area */}
@@ -365,6 +389,7 @@ const StockChart = ({
             activeDot={{ r: 6, fill: "white", stroke: "#7E22CE", strokeWidth: 2 }}
             dot={showFullData ? { r: 2, fill: "#7E22CE", stroke: "#7E22CE" } : false}
             strokeDasharray="5 5"
+            connectNulls={true}
           />
           
           {/* Today reference line */}

@@ -1,3 +1,4 @@
+
 import { mockCandles as importedMockCandles } from "@/lib/mockData";
 
 // Chart data interface
@@ -153,8 +154,12 @@ export const getStockCandles = async (symbol: string): Promise<ChartDataPoint[]>
     }
     
     // Now add prediction data (5 days into the future)
-    const lastPrice = historicalData[historicalData.length - 1].price || basePrice;
-    const predictionData = generatePredictionData(lastPrice, 5);
+    // Get the last historical price to ensure continuity
+    const lastHistoricalDataPoint = historicalData[historicalData.length - 1];
+    const lastPrice = lastHistoricalDataPoint.price as number;
+    
+    // Generate prediction starting exactly from the last historical price
+    const predictionData = generatePredictionData(lastPrice, 5, lastHistoricalDataPoint.date);
     
     // Combine historical and prediction data
     const combinedData = [...historicalData, ...predictionData];
@@ -170,7 +175,8 @@ export const getStockCandles = async (symbol: string): Promise<ChartDataPoint[]>
     const basePrice = 150 + Math.random() * 50;
     const historicalData = generateRandomChartData(basePrice, 10);
     const lastPrice = historicalData[historicalData.length - 1].price || basePrice;
-    const predictionData = generatePredictionData(lastPrice, 5);
+    const lastDate = historicalData[historicalData.length - 1].date;
+    const predictionData = generatePredictionData(lastPrice, 5, lastDate);
     
     const combinedData = [...historicalData, ...predictionData];
     
@@ -218,9 +224,9 @@ const generateRandomChartData = (basePrice: number, days: number): ChartDataPoin
 /**
  * Generate prediction data based on the last known price
  */
-const generatePredictionData = (lastPrice: number, days: number): ChartDataPoint[] => {
+const generatePredictionData = (lastPrice: number, days: number, lastDate?: string): ChartDataPoint[] => {
   const predictions: ChartDataPoint[] = [];
-  const today = new Date();
+  const startDate = lastDate ? new Date(lastDate) : new Date();
   
   // Randomly determine if we'll have an upward or downward trend
   const trendDirection = Math.random() > 0.5 ? 1 : -1;
@@ -230,8 +236,8 @@ const generatePredictionData = (lastPrice: number, days: number): ChartDataPoint
   let currentPrice = lastPrice;
   
   for (let i = 1; i <= days; i++) {
-    const date = new Date();
-    date.setDate(today.getDate() + i);
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
     const dayString = date.toISOString().split('T')[0];
     
     // Create reasonable prediction pattern
