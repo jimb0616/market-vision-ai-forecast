@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 // Define time range type
-type TimeRange = "1D" | "1W" | "1M" | "3M" | "1Y" | "ALL";
+type TimeRange = "1D" | "1W" | "1M";
 
 const Predictions = () => {
   const { toast } = useToast();
@@ -26,9 +26,6 @@ const Predictions = () => {
       case "1D": return 1;
       case "1W": return 7;
       case "1M": return 30;
-      case "3M": return 90;
-      case "1Y": return 365;
-      case "ALL": return 730; // 2 years max for "ALL"
       default: return 30;
     }
   };
@@ -117,9 +114,6 @@ const Predictions = () => {
                 <ToggleGroupItem value="1D" size="sm" className="h-7 text-xs">1D</ToggleGroupItem>
                 <ToggleGroupItem value="1W" size="sm" className="h-7 text-xs">1W</ToggleGroupItem>
                 <ToggleGroupItem value="1M" size="sm" className="h-7 text-xs">1M</ToggleGroupItem>
-                <ToggleGroupItem value="3M" size="sm" className="h-7 text-xs">3M</ToggleGroupItem>
-                <ToggleGroupItem value="1Y" size="sm" className="h-7 text-xs">1Y</ToggleGroupItem>
-                <ToggleGroupItem value="ALL" size="sm" className="h-7 text-xs">All</ToggleGroupItem>
               </ToggleGroup>
             </div>
             
@@ -134,7 +128,6 @@ const Predictions = () => {
                   symbol={selectedStock} 
                   height={350} 
                   showFullData={true}
-                  timeRange={timeRange}
                 />
               )}
             </div>

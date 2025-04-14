@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,7 +18,7 @@ interface StockAnalysisDialogProps {
 }
 
 // Define time range options
-export type TimeRange = "1D" | "1W" | "1M" | "3M" | "1Y" | "ALL";
+export type TimeRange = "1D" | "1W" | "1M";
 
 const StockAnalysisDialog = ({ stock, open, onOpenChange }: StockAnalysisDialogProps) => {
   const [selectedTab, setSelectedTab] = useState("chart");
@@ -31,9 +30,6 @@ const StockAnalysisDialog = ({ stock, open, onOpenChange }: StockAnalysisDialogP
       case "1D": return 1;
       case "1W": return 7;
       case "1M": return 30;
-      case "3M": return 90;
-      case "1Y": return 365;
-      case "ALL": return 730; // 2 years max for "ALL"
       default: return 30;
     }
   };
@@ -152,13 +148,10 @@ const StockAnalysisDialog = ({ stock, open, onOpenChange }: StockAnalysisDialogP
                     <ToggleGroupItem value="1D" size="sm" className="h-7 text-xs">1D</ToggleGroupItem>
                     <ToggleGroupItem value="1W" size="sm" className="h-7 text-xs">1W</ToggleGroupItem>
                     <ToggleGroupItem value="1M" size="sm" className="h-7 text-xs">1M</ToggleGroupItem>
-                    <ToggleGroupItem value="3M" size="sm" className="h-7 text-xs">3M</ToggleGroupItem>
-                    <ToggleGroupItem value="1Y" size="sm" className="h-7 text-xs">1Y</ToggleGroupItem>
-                    <ToggleGroupItem value="ALL" size="sm" className="h-7 text-xs">All</ToggleGroupItem>
                   </ToggleGroup>
                 </CardTitle>
                 <CardDescription className="text-gray-400">
-                  Historical data with {timeRange === "1D" ? "1-day" : timeRange === "1W" ? "7-day" : "7-day"} AI prediction
+                  Historical data with {timeRange === "1D" ? "24-hour" : timeRange === "1W" ? "1-week" : "1-month"} view
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -173,7 +166,6 @@ const StockAnalysisDialog = ({ stock, open, onOpenChange }: StockAnalysisDialogP
                     color="#3B82F6" 
                     height={400}
                     showFullData={true}
-                    timeRange={timeRange}
                   />
                 ) : (
                   <div className="h-[400px] flex items-center justify-center">
