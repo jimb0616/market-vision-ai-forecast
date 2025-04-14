@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { ChartDataPoint } from "@/services/finnhubService";
@@ -80,12 +79,13 @@ const StockChart = ({
     .map(item => item.value)
     .filter(value => value !== undefined && value > 0) as number[];
     
-  const minValue = Math.min(...allValues) * 0.98;
-  const maxValue = Math.max(...allValues) * 1.02;
+  const minValue = Math.min(...allValues) * 0.95; // Add some padding
+  const maxValue = Math.max(...allValues) * 1.05;
   
   if (isLoading) {
     return (
       <div className="relative" ref={chartRef}>
+        {/* Chart Title */}
         <div className="flex justify-between items-center mb-4">
           <div>
             <h3 className="text-lg font-bold text-white">{symbol} {showFullData ? "Stock Price" : "Preview"}</h3>
@@ -101,7 +101,7 @@ const StockChart = ({
   
   if (error) {
     console.error("Error loading stock data:", error);
-    // Fall back to mock data if API fails
+    // Fall back to using the mock data directly instead of showing error
     return (
       <div className="relative" ref={chartRef}>
         {/* Chart Title */}
@@ -126,7 +126,7 @@ const StockChart = ({
         
         <ResponsiveContainer width="100%" height={height}>
           <AreaChart
-            data={mockData}
+            data={generateFallbackData(symbol, 10, 5)}
             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
             onMouseMove={(e) => {
               if (e.activeTooltipIndex !== undefined) {
@@ -156,7 +156,7 @@ const StockChart = ({
               interval="preserveEnd"
             />
             <YAxis 
-              domain={[minValue, maxValue]}
+              domain={['auto', 'auto']}
               tick={{ fontSize: 10, fill: '#94A3B8' }}
               tickFormatter={(tick) => `$${tick.toFixed(0)}`}
               axisLine={{ stroke: '#334155' }}
@@ -205,6 +205,68 @@ const StockChart = ({
       </div>
     );
   }
+  
+  // Function to generate fallback data in case of error
+  const generateFallbackData = (symbol: string, historyDays: number, futureDays: number): ChartDataPoint[] => {
+    const result: ChartDataPoint[] = [];
+    const today = new Date();
+    
+    // Set base price based on stock symbol
+    let basePrice = 180; // Default for AAPL
+    if (symbol === 'TSLA') basePrice = 235;
+    if (symbol === 'MSFT') basePrice = 372;
+    if (symbol === 'AMZN') basePrice = 182;
+    if (symbol === 'GOOG') basePrice = 145;
+    if (symbol === 'META') basePrice = 512;
+    
+    // Generate historical data
+    let currentPrice = basePrice;
+    for (let i = historyDays; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const change = (Math.random() - 0.4) * basePrice * 0.01; // Slight upward bias
+      currentPrice += change;
+      
+      result.push({
+        date: date.toISOString().split('T')[0],
+        price: Math.round(currentPrice * 100) / 100,
+        volume: Math.floor(Math.random() * 1000000) + 100000
+      });
+    }
+    
+    // Generate future prediction data
+    const lastPrice = result[result.length - 1].price || basePrice;
+    let predictionPrice = lastPrice;
+    
+    // Randomly decide trend direction
+    const trendUp = Math.random() > 0.5;
+    const trendFactor = 0.5 + Math.random() * 1.5;
+    
+    for (let i = 1; i <= futureDays; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      
+      // Create change based on trend direction
+      const dailyChangePct = (Math.random() * 0.02) * (trendUp ? 1 : -1) * trendFactor;
+      predictionPrice += predictionPrice * dailyChangePct;
+      
+      // Keep prediction price reasonable
+      if (predictionPrice < lastPrice * 0.85) {
+        predictionPrice = lastPrice * 0.85 + Math.random() * lastPrice * 0.05;
+      } else if (predictionPrice > lastPrice * 1.15) {
+        predictionPrice = lastPrice * 1.15 - Math.random() * lastPrice * 0.05;
+      }
+      
+      result.push({
+        date: date.toISOString().split('T')[0],
+        price: undefined,
+        prediction: Math.round(predictionPrice * 100) / 100,
+        volume: Math.floor(Math.random() * 800000) + 200000
+      });
+    }
+    
+    return result;
+  };
   
   return (
     <div className="relative" ref={chartRef}>
@@ -257,7 +319,7 @@ const StockChart = ({
             axisLine={{ stroke: '#334155' }}
             tickLine={{ stroke: '#334155' }}
             padding={{ left: 5, right: 5 }}
-            interval={4}
+            interval={1}
           />
           <YAxis 
             domain={[minValue, maxValue]}

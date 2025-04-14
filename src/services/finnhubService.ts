@@ -1,4 +1,3 @@
-
 import { mockCandles as importedMockCandles } from "@/lib/mockData";
 
 // Chart data interface
@@ -113,93 +112,103 @@ export const getStockQuote = async (symbol: string): Promise<StockQuote> => {
 export const getStockCandles = async (symbol: string): Promise<ChartDataPoint[]> => {
   try {
     await new Promise((resolve) => setTimeout(resolve, MOCK_API_DELAY));
-    // Safely fetch mock data for symbol or default to 'AAPL'
-    const candles = mockCandles[symbol] || mockCandles['AAPL'];
-    const chartData = processStockCandles(candles);
-    const withPredictions = appendPredictionData(chartData);
     
-    // Filter to only keep the most recent 10 days of historical data and 5 days of prediction
+    // Create historical data (last 10 days)
     const today = new Date();
-    const tenDaysAgo = new Date(today);
-    tenDaysAgo.setDate(today.getDate() - 10);
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 10);
     
-    const filteredData = withPredictions.filter(point => {
-      const pointDate = new Date(point.date);
-      // Keep historical data from the last 10 days and predictions for the next 5 days
-      if (point.prediction) {
-        // For prediction data, only keep 5 days worth
-        return pointDate <= new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000);
-      } else {
-        // For historical data, only keep the last 10 days
-        return pointDate >= tenDaysAgo;
+    const historicalData: ChartDataPoint[] = [];
+    
+    // Generate base price based on the stock symbol
+    let basePrice = 180; // Default for AAPL
+    if (symbol === 'TSLA') basePrice = 235;
+    if (symbol === 'MSFT') basePrice = 372;
+    if (symbol === 'AMZN') basePrice = 182;
+    if (symbol === 'GOOG') basePrice = 145;
+    if (symbol === 'META') basePrice = 512;
+    
+    // Create daily historical data with slight randomization
+    const volatility = 2 + Math.random() * 3;
+    let currentPrice = basePrice;
+    
+    for (let i = 10; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      
+      // Add random price movement (more realistic)
+      const dailyChange = (Math.random() - 0.45) * volatility; // Slight upward bias
+      currentPrice += dailyChange;
+      
+      // Ensure price never goes below minimum threshold
+      if (currentPrice < basePrice * 0.9) {
+        currentPrice = basePrice * 0.9 + Math.random() * 5;
       }
-    });
+      
+      historicalData.push({
+        date: date.toISOString().split('T')[0],
+        price: Math.round(currentPrice * 100) / 100,
+        volume: Math.floor(Math.random() * 1000000) + 500000
+      });
+    }
+    
+    // Now add prediction data (5 days into the future)
+    const lastPrice = historicalData[historicalData.length - 1].price || basePrice;
+    const predictionData = generatePredictionData(lastPrice, 5);
+    
+    // Combine historical and prediction data
+    const combinedData = [...historicalData, ...predictionData];
     
     // Ensure dates are in ascending order
-    return filteredData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return combinedData.sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
   } catch (error) {
-    console.error(`Error fetching ${symbol} candles:`, error);
-    const candles = mockCandles[symbol] || mockCandles['AAPL'];
-    const chartData = processStockCandles(candles);
-    const withPredictions = appendPredictionData(chartData);
+    console.error(`Error generating ${symbol} candles:`, error);
     
-    // Apply the same filtering here too
-    const today = new Date();
-    const tenDaysAgo = new Date(today);
-    tenDaysAgo.setDate(today.getDate() - 10);
+    // Fallback to fully random data if something goes wrong
+    const basePrice = 150 + Math.random() * 50;
+    const historicalData = generateRandomChartData(basePrice, 10);
+    const lastPrice = historicalData[historicalData.length - 1].price || basePrice;
+    const predictionData = generatePredictionData(lastPrice, 5);
     
-    const filteredData = withPredictions.filter(point => {
-      const pointDate = new Date(point.date);
-      if (point.prediction) {
-        return pointDate <= new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000);
-      } else {
-        return pointDate >= tenDaysAgo;
-      }
-    });
+    const combinedData = [...historicalData, ...predictionData];
     
-    // Ensure dates are in ascending order
-    return filteredData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return combinedData.sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
   }
 };
 
 /**
- * Process raw candle data into formatted chart points
+ * Generate random chart data
  */
-const processStockCandles = (candles: StockCandle): ChartDataPoint[] => {
-  if (!candles || !candles.c || !candles.t || candles.s !== 'ok') {
-    return generateMockChartData();
-  }
-
-  return candles.t.map((timestamp, index) => {
-    const date = new Date(timestamp * 1000).toISOString().split('T')[0];
-    return {
-      date,
-      price: candles.c[index],
-      volume: candles.v[index]
-    };
-  });
-};
-
-/**
- * Generate random chart data when no data is available
- */
-const generateMockChartData = (): ChartDataPoint[] => {
-  const basePrice = 150 + Math.random() * 50;
-  const volatility = 2 + Math.random() * 5;
+const generateRandomChartData = (basePrice: number, days: number): ChartDataPoint[] => {
+  const volatility = 2 + Math.random() * 3;
   const dataPoints: ChartDataPoint[] = [];
+  let currentPrice = basePrice;
   
-  for (let i = 30; i >= 0; i--) {
+  const today = new Date();
+  
+  for (let i = days; i >= 0; i--) {
     const date = new Date();
-    date.setDate(date.getDate() - i);
+    date.setDate(today.getDate() - i);
     
-    const priceChange = (Math.random() - 0.5) * volatility;
-    const price = basePrice + priceChange * (30 - i) / 3;
+    // Add random price movement
+    const priceChange = (Math.random() - 0.45) * volatility;
+    currentPrice += priceChange;
+    
+    // Ensure price never goes below minimum threshold
+    if (currentPrice < basePrice * 0.9) {
+      currentPrice = basePrice * 0.9 + Math.random() * 5;
+    }
+    
     const volume = Math.floor(Math.random() * 1000000) + 100000;
     
     dataPoints.push({
       date: date.toISOString().split('T')[0],
-      price: Math.round(price * 100) / 100,
-      volume: volume
+      price: Math.round(currentPrice * 100) / 100,
+      volume
     });
   }
   
@@ -207,7 +216,63 @@ const generateMockChartData = (): ChartDataPoint[] => {
 };
 
 /**
- * Append prediction data to historical chart data
+ * Generate prediction data based on the last known price
+ */
+const generatePredictionData = (lastPrice: number, days: number): ChartDataPoint[] => {
+  const predictions: ChartDataPoint[] = [];
+  const today = new Date();
+  
+  // Randomly determine if we'll have an upward or downward trend
+  const trendDirection = Math.random() > 0.5 ? 1 : -1;
+  const trendStrength = 0.5 + Math.random() * 1.5; // Trend factor
+  const volatility = 1 + Math.random() * 2; // Daily volatility
+  
+  let currentPrice = lastPrice;
+  
+  for (let i = 1; i <= days; i++) {
+    const date = new Date();
+    date.setDate(today.getDate() + i);
+    const dayString = date.toISOString().split('T')[0];
+    
+    // Create reasonable prediction pattern
+    const baseChange = trendDirection * trendStrength * currentPrice * 0.01;
+    const noise = (Math.random() - 0.5) * volatility;
+    const dailyChange = baseChange + noise;
+    
+    // Apply the daily change
+    currentPrice += dailyChange;
+    
+    // Ensure prediction never goes below 80% of last price
+    if (currentPrice < lastPrice * 0.8) {
+      currentPrice = lastPrice * 0.85 + Math.random() * lastPrice * 0.05;
+    }
+    
+    // Ensure prediction never goes above 120% of last price (keep it realistic)
+    if (currentPrice > lastPrice * 1.2) {
+      currentPrice = lastPrice * 1.15 + Math.random() * lastPrice * 0.05;
+    }
+    
+    // Make sure we never have zero or negative values
+    if (currentPrice <= 0) {
+      currentPrice = lastPrice * 0.9;
+    }
+    
+    const volume = Math.floor(Math.random() * 800000) + 200000;
+    
+    predictions.push({
+      date: dayString,
+      price: undefined, // Undefined price for prediction data points
+      prediction: Math.round(currentPrice * 100) / 100,
+      volume
+    });
+  }
+  
+  return predictions;
+};
+
+/**
+ * Append prediction data to historical chart data - DEPRECATED
+ * Now using direct generation instead
  */
 const appendPredictionData = (chartData: ChartDataPoint[]): ChartDataPoint[] => {
   if (!chartData || chartData.length === 0) return [];
