@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+
+import { useState, useRef, useEffect, memo, useMemo, useCallback } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { ChartDataPoint } from "@/services/finnhubService";
 import { useQuery } from "@tanstack/react-query";
@@ -73,7 +74,7 @@ const generateFallbackData = (symbol: string, historyDays: number, futureDays: n
   return result;
 };
 
-const StockChart = ({ 
+const StockChart = memo(({ 
   data: mockData, 
   symbol, 
   color = "#2962FF", 
@@ -88,88 +89,91 @@ const StockChart = ({
     queryKey: ['stockCandles', symbol],
     queryFn: () => getStockCandles(symbol),
     refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
-  // Transform Finnhub candle data to our ChartDataPoint format
-  const [chartData, setChartData] = useState<ChartDataPoint[]>(mockData);
-  
-  useEffect(() => {
+  // Transform and memoize chart data
+  const chartData = useMemo(() => {
     if (stockCandles && stockCandles.length > 0) {
-      // Sort by date to ensure proper ordering
-      const sortedData = [...stockCandles].sort((a, b) => 
+      return [...stockCandles].sort((a, b) => 
         new Date(a.date).getTime() - new Date(b.date).getTime()
       );
-      setChartData(sortedData);
     }
-  }, [stockCandles, symbol]);
+    return mockData;
+  }, [stockCandles, mockData]);
 
-  // Find the index where predictions start (where prediction becomes defined and price is undefined)
-  const predictionStartIndex = chartData.findIndex(point => 
-    point.price === undefined && point.prediction !== undefined
-  );
+  // Find the index where predictions start
+  const predictionStartIndex = useMemo(() => 
+    chartData.findIndex(point => 
+      point.price === undefined && point.prediction !== undefined
+    ), [chartData]);
   
   // Today's date (last real data point)
-  const today = predictionStartIndex > 0 
-    ? chartData[predictionStartIndex - 1].date 
-    : chartData[chartData.length - 1].date;
+  const today = useMemo(() => 
+    predictionStartIndex > 0 
+      ? chartData[predictionStartIndex - 1].date 
+      : chartData[chartData.length - 1].date,
+    [chartData, predictionStartIndex]);
   
   // Custom tooltip formatter
-  const formatTooltip = (value: number) => {
+  const formatTooltip = useCallback((value: number) => {
     return [`$${value.toFixed(2)}`, ''];
-  };
+  }, []);
   
-  // Format data for display - ensure no gaps between historical and prediction data
-  const formattedData = chartData.map((item, index) => {
-    // For the last historical data point, include both price and prediction
-    if (predictionStartIndex > 0 && index === predictionStartIndex - 1) {
+  // Format data for display
+  const formattedData = useMemo(() => {
+    return chartData.map((item, index) => {
+      // For the last historical data point, include both price and prediction
+      if (predictionStartIndex > 0 && index === predictionStartIndex - 1) {
+        return {
+          ...item,
+          value: item.price,
+          prediction: item.price,
+          isPrediction: false
+        };
+      }
+      
+      // For the first prediction point, ensure it connects with the last historical point
+      if (index === predictionStartIndex) {
+        const lastHistoricalPrice = chartData[predictionStartIndex - 1]?.price;
+        return {
+          ...item,
+          value: item.prediction,
+          price: undefined,
+          prediction: item.prediction || lastHistoricalPrice,
+          isPrediction: true
+        };
+      }
+      
       return {
         ...item,
-        // For the chart - combine price and prediction into a single value for display
-        value: item.price,
-        prediction: item.price, // Add prediction to bridge the gap
-        isPrediction: false
+        value: item.price !== undefined ? item.price : item.prediction,
+        isPrediction: item.price === undefined && item.prediction !== undefined
       };
-    }
-    
-    // For the first prediction point, ensure it connects with the last historical point
-    if (index === predictionStartIndex) {
-      const lastHistoricalPrice = chartData[predictionStartIndex - 1]?.price;
-      return {
-        ...item,
-        value: item.prediction,
-        price: undefined, // Keep as undefined to maintain correct categorization
-        prediction: item.prediction || lastHistoricalPrice, // Use last price if prediction is somehow missing
-        isPrediction: true
-      };
-    }
-    
-    return {
-      ...item,
-      // For the chart - combine price and prediction into a single value for display
-      value: item.price !== undefined ? item.price : item.prediction,
-      // Keep track of whether this is a prediction or actual price
-      isPrediction: item.price === undefined && item.prediction !== undefined
-    };
-  });
+    });
+  }, [chartData, predictionStartIndex]);
   
   // Function to format dates
-  const formatDate = (dateStr: string) => {
+  const formatDate = useCallback((dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  }, []);
   
-  // Determine min and max values for Y axis (excluding zero values that might be errors)
-  const allValues = formattedData
-    .map(item => item.value)
-    .filter(value => value !== undefined && value > 0) as number[];
-    
-  const minValue = Math.min(...allValues) * 0.95; // Add some padding
-  const maxValue = Math.max(...allValues) * 1.05;
-  
+  // Determine min and max values for Y axis
+  const { minValue, maxValue } = useMemo(() => {
+    const allValues = formattedData
+      .map(item => item.value)
+      .filter(value => value !== undefined && value > 0) as number[];
+      
+    return {
+      minValue: Math.min(...allValues) * 0.95,
+      maxValue: Math.max(...allValues) * 1.05
+    };
+  }, [formattedData]);
+
   if (isLoading) {
     return (
-      <div className="relative" ref={chartRef}>
-        {/* Chart Title */}
+      <div className="relative animate-fade-in" ref={chartRef}>
         <div className="flex justify-between items-center mb-4">
           <div>
             <h3 className="text-lg font-bold text-white">{symbol} {showFullData ? "Stock Price" : "Preview"}</h3>
@@ -177,6 +181,7 @@ const StockChart = ({
           </div>
         </div>
         <div className="h-[300px] w-full flex items-center justify-center bg-market-darkBlue/50 rounded-lg">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mr-3"></div>
           <p className="text-gray-400">Loading stock data...</p>
         </div>
       </div>
@@ -186,8 +191,7 @@ const StockChart = ({
   if (error) {
     console.error("Error loading stock data:", error);
     return (
-      <div className="relative" ref={chartRef}>
-        {/* Chart Title */}
+      <div className="relative animate-fade-in" ref={chartRef}>
         <div className="flex justify-between items-center mb-4">
           <div>
             <h3 className="text-lg font-bold text-white">{symbol} {showFullData ? "Stock Price" : "Preview"}</h3>
@@ -257,7 +261,6 @@ const StockChart = ({
               }}
             />
             
-            {/* Historical Price Area */}
             <Area 
               type="monotone" 
               dataKey="price" 
@@ -271,7 +274,6 @@ const StockChart = ({
               connectNulls={true}
             />
             
-            {/* Prediction Area */}
             <Area 
               type="monotone" 
               dataKey="prediction" 
@@ -292,8 +294,7 @@ const StockChart = ({
   }
   
   return (
-    <div className="relative" ref={chartRef}>
-      {/* Chart Title */}
+    <div className="relative animate-fade-in" ref={chartRef}>
       <div className="flex justify-between items-center mb-4">
         <div>
           <h3 className="text-lg font-bold text-white">{symbol} {showFullData ? "Stock Price" : "Preview"}</h3>
@@ -363,7 +364,6 @@ const StockChart = ({
             }}
           />
           
-          {/* Historical Price Area */}
           <Area 
             type="monotone" 
             dataKey="price" 
@@ -377,7 +377,6 @@ const StockChart = ({
             connectNulls={true}
           />
           
-          {/* Prediction Area */}
           <Area 
             type="monotone" 
             dataKey="prediction" 
@@ -392,7 +391,6 @@ const StockChart = ({
             connectNulls={true}
           />
           
-          {/* Today reference line */}
           {predictionStartIndex > 0 && (
             <ReferenceLine 
               x={today} 
@@ -410,6 +408,8 @@ const StockChart = ({
       </ResponsiveContainer>
     </div>
   );
-};
+});
+
+StockChart.displayName = 'StockChart';
 
 export default StockChart;
